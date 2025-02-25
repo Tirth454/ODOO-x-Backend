@@ -44,11 +44,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 //import routes
-// import buyerRoutes from "./routes/buyer.route.js";
+import patientRoutes from "./routes/patient.route.js";
 
 
 //routes
-// app.use("/api/v1/seller", sellerRoutes);
+app.use("/api/v1/patient", patientRoutes);
 
 app.use((err, req, res, next) => {
     // Check if it's an instance of your custom ApiError

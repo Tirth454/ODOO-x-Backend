@@ -9,12 +9,12 @@ const generateUniqueId = () => {
     // Pre-define length constants
     const LETTER_LENGTH = 2;
     const NUMBER_LENGTH = 4;
-    
+
     // Use array methods instead of loops for better performance
-    const letters = Array.from({ length: LETTER_LENGTH }, () => 
+    const letters = Array.from({ length: LETTER_LENGTH }, () =>
         String.fromCharCode(65 + Math.floor(Math.random() * 26))
     ).join('');
-    
+
     const numbers = Array.from({ length: NUMBER_LENGTH }, () =>
         Math.floor(Math.random() * 10)
     ).join('');
@@ -178,7 +178,7 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
 
     if (!patient) {
         return res.status(404).json(new apiError(404, {}, "Patient not found"));
-    }   
+    }
 
     return res.status(200).json(new apiResponse(200, {
         patient
@@ -189,4 +189,4 @@ const login = asyncHandler(async (req, res) => {
 
 });
 
-export { registerPatient, updateVerifyStatus };
+export { registerPatient, updateVerifyStatus, login };
