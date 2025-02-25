@@ -54,11 +54,6 @@ const patientSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    patientCode: {
-        type: String,
-        required: true,
-        unique: true
-    },
     dateOfBirth: {
         type: Date,
         required: true

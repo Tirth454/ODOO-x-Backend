@@ -185,4 +185,8 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
     }, "Patient verified successfully"));
 });
 
+const login = asyncHandler(async (req, res) => {
+
+});
+
 export { registerPatient, updateVerifyStatus };
