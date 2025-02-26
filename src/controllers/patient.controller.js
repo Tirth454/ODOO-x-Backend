@@ -186,7 +186,7 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
     }, "Patient verified successfully"));
 });
 
-const login = asyncHandler(async (req, res) => {
+const patientLogin = asyncHandler(async (req, res) => {
     const { uniqueId, password } = req.body;
 
     // Validate required fields
@@ -249,4 +249,4 @@ const getCurrentPatient = asyncHandler(async (req, res) => {
         );
 });
 
-export { registerPatient, updateVerifyStatus, login ,getCurrentPatient};
+export { registerPatient, updateVerifyStatus, patientLogin, getCurrentPatient };
