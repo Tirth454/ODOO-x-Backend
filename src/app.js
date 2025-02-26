@@ -45,10 +45,14 @@ app.use(cookieParser());
 
 //import routes
 import patientRoutes from "./routes/patient.route.js";
+import doctorRoutes from "./routes/doctor.routes.js";
+import medicalRoutes from "./routes/medical.model.js";
 
 
 //routes
 app.use("/api/v1/patient", patientRoutes);
+app.use("/api/v1/doctor", doctorRoutes);
+app.use("/api/v1/medical", medicalRoutes);
 
 app.use((err, req, res, next) => {
     // Check if it's an instance of your custom ApiError
