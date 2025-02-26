@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken"
 import Patient from "../models/patient.model.js"
 import Doctor from "../models/doctor.model.js"
-// import Laboratory from "../models/laboratory.model.js"
+import Laboratory from "../models/laboratory.model.js"
 import Medical from "../models/medical.model.js"
 import apiResponse from "../utils/apiResponse.js"
 import apiError from "../utils/apiError.js"

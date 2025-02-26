@@ -54,6 +54,7 @@ import laboratoryRoutes from "./routes/laboratory.route.js";
 app.use("/api/v1/patient", patientRoutes);
 app.use("/api/v1/doctor", doctorRoutes);
 app.use("/api/v1/medical", medicalRoutes);
+app.use("api/v1/laboratory", laboratoryRoutes)
 
 app.use((err, req, res, next) => {
     // Check if it's an instance of your custom ApiError
