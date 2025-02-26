@@ -186,7 +186,54 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
+    const { uniqueId, password } = req.body;
 
+    // Validate required fields
+    if (!uniqueId || !password) {
+        return res.status(400).json(new apiError(400, {}, "All fields are required"));
+    }
+
+    // Find patient by uniqueId
+    const patient = await Patient.findOne({ uniqueId });
+
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Check if patient is verified
+    if (!patient.isVerified) {
+        return res.status(401).json(new apiError(401, {}, "Please verify your account first"));
+    }
+
+    // Check password
+    const isPasswordValid = await patient.isPasswordCorrect(password);
+
+    if (!isPasswordValid) {
+        return res.status(401).json(new apiError(401, {}, "Invalid credentials"));
+    }
+
+    // Generate access and refresh tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(patient._id);
+
+    // Get patient details without sensitive information
+    const loggedInPatient = await Patient.findById(patient._id).select("-password -refreshToken");
+
+    // Set cookies options
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    // Send response with cookies
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new apiResponse(200, {
+            patient: loggedInPatient,
+            accessToken,
+            refreshToken
+        }, "Patient logged in successfully"));
 });
 
 export { registerPatient, updateVerifyStatus, login };
