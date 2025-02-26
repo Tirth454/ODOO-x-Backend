@@ -237,4 +237,16 @@ const login = asyncHandler(async (req, res) => {
         }, "Patient logged in successfully"));
 });
 
-export { registerPatient, updateVerifyStatus, login };
+const getCurrentPatient = asyncHandler(async (req, res) => {
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                { patient: req.patient },
+                "patient fetched successfully"
+            )
+        );
+});
+
+export { registerPatient, updateVerifyStatus, login ,getCurrentPatient};

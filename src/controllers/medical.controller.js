@@ -218,4 +218,16 @@ const loginMedical = asyncHandler(async (req, res) => {
         );
 });
 
-export { registerMedical, updateVerifyStatus, loginMedical };
+const getCurrentMedical = asyncHandler(async (req, res) => {
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                { medical: req.medical },
+                "medical fetched successfully"
+            )
+        );
+});
+
+export { registerMedical, updateVerifyStatus, loginMedical, getCurrentMedical };

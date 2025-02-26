@@ -234,4 +234,16 @@ const loginDoctor = asyncHandler(async (req, res) => {
         }, "Doctor logged in successfully"));
 });
 
-export { registerDoctor, updateVerifyStatus, loginDoctor };
+const getCurrentDoctor = asyncHandler(async (req, res) => {
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                { doctor: req.doctor },
+                "doctor fetched successfully"
+            )
+        );
+});
+
+export { registerDoctor, updateVerifyStatus, loginDoctor, getCurrentDoctor };
