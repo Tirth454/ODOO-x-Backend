@@ -9,9 +9,9 @@ import checkAuth from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/register", registerPatient);
-router.post("/verify", updateVerifyStatus);
-router.post("/login", patientLogin);
-router.get("/current", getCurrentPatient);
+router.route("/register").post(registerPatient);
+router.route("/verify").post(updateVerifyStatus);
+router.route("/login").post(patientLogin);
+router.route("/current").get(checkAuth, getCurrentPatient);
 
 export default router;
