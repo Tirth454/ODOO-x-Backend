@@ -45,8 +45,9 @@ app.use(cookieParser());
 
 //import routes
 import patientRoutes from "./routes/patient.route.js";
-import doctorRoutes from "./routes/doctor.routes.js";
-import medicalRoutes from "./routes/medical.model.js";
+import doctorRoutes from "./routes/doctor.route.js";
+import medicalRoutes from "./routes/medical.route.js";
+import laboratoryRoutes from "./routes/laboratory.route.js";
 
 
 //routes

@@ -3,7 +3,8 @@ import {
     registerLaboratory,
     updateVerifyStatus,
     loginLaboratory,
-    getCurrentLaboratory
+    getCurrentLaboratory,
+    logoutLaboratory
 } from "../controllers/laboratory.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
 
@@ -13,5 +14,6 @@ router.route("/register").post(registerLaboratory);
 router.route("/verify").post(updateVerifyStatus);
 router.route("/login").post(loginLaboratory);
 router.route("/current").get(checkAuth, getCurrentLaboratory);
+router.route("/logout").post(checkAuth, logoutLaboratory)
 
 export default router;

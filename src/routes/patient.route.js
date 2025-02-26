@@ -14,6 +14,6 @@ router.route("/register").post(registerPatient);
 router.route("/verify").post(updateVerifyStatus);
 router.route("/login").post(patientLogin);
 router.route("/current").get(checkAuth, getCurrentPatient);
-router.route("logout").post(checkAuth,logoutPatient)
+router.route("/logout").post(checkAuth, logoutPatient)
 
 export default router;
