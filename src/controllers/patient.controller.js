@@ -249,4 +249,37 @@ const getCurrentPatient = asyncHandler(async (req, res) => {
         );
 });
 
-export { registerPatient, updateVerifyStatus, patientLogin, getCurrentPatient };
+const logoutPatient = asyncHandler(async (req, res) => {
+    const patient = await Patient.findById(req.patient._id);
+
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Only perform logout actions if patient has an active session
+    if (patient.refreshToken) {
+        await Patient.findByIdAndUpdate(
+            req.patient._id,
+            { $set: { refreshToken: null } },
+            { new: true }
+        );
+    }
+
+    // Clear cookies with proper invalidation
+    const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Strict',
+        expires: new Date(0)
+    };
+
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new apiResponse(200, {}, patient.refreshToken 
+            ? "Patient logged out successfully" 
+            : "No active session found"));
+});
+
+export { registerPatient, updateVerifyStatus, patientLogin, getCurrentPatient ,logoutPatient};

@@ -153,12 +153,12 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
     }
 
     const medical = await Medical.findOneAndUpdate(
-        { 
+        {
             email,
             otp,
             isVerified: false
         },
-        { 
+        {
             isVerified: true,
             $unset: { otp: 1 }
         },
@@ -230,4 +230,37 @@ const getCurrentMedical = asyncHandler(async (req, res) => {
         );
 });
 
-export { registerMedical, updateVerifyStatus, loginMedical, getCurrentMedical };
+const logoutMedical = asyncHandler(async (req, res) => {
+    const medical = await Medical.findById(req.medical._id);
+
+    if (!medical) {
+        return res.status(404).json(new apiError(404, {}, "Medical center not found"));
+    }
+
+    // Only perform logout actions if medical center has an active session
+    if (medical.refreshToken) {
+        await Medical.findByIdAndUpdate(
+            req.medical._id,
+            { $set: { refreshToken: null } },
+            { new: true }
+        );
+    }
+
+    // Clear cookies with proper invalidation
+    const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Strict',
+        expires: new Date(0)
+    };
+
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new apiResponse(200, {}, medical.refreshToken
+            ? "Medical center logged out successfully"
+            : "No active session found"));
+});
+
+export { registerMedical, updateVerifyStatus, loginMedical, getCurrentMedical, logoutMedical };
