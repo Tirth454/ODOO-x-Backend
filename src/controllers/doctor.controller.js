@@ -234,4 +234,4 @@ const loginDoctor = asyncHandler(async (req, res) => {
         }, "Doctor logged in successfully"));
 });
 
-export { registerDoctor, updateVerifyStatus };
+export { registerDoctor, updateVerifyStatus, loginDoctor };
