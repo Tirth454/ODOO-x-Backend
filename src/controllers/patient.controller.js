@@ -2,9 +2,10 @@ import apiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Patient from "../models/patient.model.js"; // Import Patient model
+import nodeMailer from "nodemailer";
+
 
 // Register Patient
-
 const generateUniqueId = () => {
     // Pre-define length constants
     const LETTER_LENGTH = 2;

@@ -2,6 +2,7 @@ import apiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Doctor from "../models/doctor.model.js";
+import nodeMailer from "nodemailer";
 
 
 const generateAccessAndRefreshToken = async (doctorId) => {
@@ -182,6 +183,55 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
     }, "Doctor verified successfully"));
 });
 
+const loginDoctor = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
 
+    // Validate required fields
+    if (!email || !password) {
+        return res.status(400).json(new apiError(400, {}, "All fields are required"));
+    }
+
+    // Find doctor by email
+    const doctor = await Doctor.findOne({ email });
+
+    if (!doctor) {
+        return res.status(404).json(new apiError(404, {}, "Doctor not found"));
+    }
+
+    // Check if doctor is verified
+    if (!doctor.isVerified) {
+        return res.status(401).json(new apiError(401, {}, "Please verify your account first"));
+    }
+
+    // Check password
+    const isPasswordValid = await doctor.isPasswordCorrect(password);
+
+    if (!isPasswordValid) {
+        return res.status(401).json(new apiError(401, {}, "Invalid credentials"));
+    }
+
+    // Generate access and refresh tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(doctor._id);
+
+    // Get doctor details without sensitive information
+    const loggedInDoctor = await Doctor.findById(doctor._id).select("-password -refreshToken");
+
+    // Set cookies options
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    // Send response with cookies
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new apiResponse(200, {
+            doctor: loggedInDoctor,
+            accessToken,
+            refreshToken
+        }, "Doctor logged in successfully"));
+});
 
 export { registerDoctor, updateVerifyStatus };
