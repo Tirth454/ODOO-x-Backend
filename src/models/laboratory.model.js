@@ -31,15 +31,14 @@ const laboratorySchema = new mongoose.Schema({
         state: String,
         postalCode: String
     },
+    reports: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Report'
+    }],
     contactNumber: {
         type: String,
         required: true,
         unique: true
-    },
-    accreditation: {
-        type: String,
-        enum: ['ISO', 'NABL', 'CAP', 'Other'],
-        required: true
     },
     servicesOffered: [{
         type: String,

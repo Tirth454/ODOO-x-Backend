@@ -81,8 +81,6 @@ const registerMedical = asyncHandler(async (req, res) => {
         otp
     });
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(medical._id);
-
     // Send verification email with OTP
     const transporter = nodeMailer.createTransport({
         service: "gmail",
@@ -140,8 +138,6 @@ Healthcare Portal Team`,
 
     return res.status(201).json(new apiResponse(201, {
         medical: medicalDetails,
-        accessToken,
-        refreshToken
     }, "Medical center registered successfully. Please verify your account using the OTP sent to your email."));
 });
 
@@ -250,8 +246,6 @@ const logoutMedical = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: true,
-        sameSite: 'Strict',
-        expires: new Date(0)
     };
 
     return res

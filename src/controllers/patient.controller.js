@@ -94,8 +94,6 @@ const registerPatient = asyncHandler(async (req, res) => {
         isVerified: false
     });
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(patient._id);
-
     // Send verification email
     const transporter = nodeMailer.createTransport({
         service: "gmail",
@@ -160,8 +158,6 @@ Note: This is an automated message. Please do not reply to this email.`,
     const patientDetails = await Patient.findById(patient._id).select("-password -refreshToken");
 
     res.status(201).json(new apiResponse(201, {
-        accessToken,
-        refreshToken,
         patient: patientDetails,
         uniqueId
     }, "Patient registered successfully and verification email sent"));
@@ -269,8 +265,6 @@ const logoutPatient = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: true,
-        sameSite: 'Strict',
-        expires: new Date(0)
     };
 
     return res
