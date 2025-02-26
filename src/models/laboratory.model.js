@@ -40,10 +40,6 @@ const laboratorySchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    servicesOffered: [{
-        type: String,
-        enum: ['Blood Tests', 'Imaging', 'Pathology', 'Genetic Testing', 'Microbiology']
-    }],
     createdAt: {
         type: Date,
         default: Date.now

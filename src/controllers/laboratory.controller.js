@@ -29,7 +29,7 @@ const registerLaboratory = asyncHandler(async (req, res) => {
         licenseNumber,
         address,
         contactNumber,
-        servicesOffered
+        
     } = req.body;
 
     // Validate required fields
@@ -41,12 +41,6 @@ const registerLaboratory = asyncHandler(async (req, res) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         throw new apiError(400, "Invalid email format");
-    }
-
-    // Validate services offered
-    const validServices = ['Blood Tests', 'Imaging', 'Pathology', 'Genetic Testing', 'Microbiology'];
-    if (servicesOffered && !servicesOffered.every(service => validServices.includes(service))) {
-        throw new apiError(400, "Invalid service type provided");
     }
 
     // Check if laboratory already exists
@@ -76,7 +70,6 @@ const registerLaboratory = asyncHandler(async (req, res) => {
         licenseNumber,
         address: address || {},
         contactNumber,
-        servicesOffered: servicesOffered || [],
         isVerified: false,
         otp
     });
