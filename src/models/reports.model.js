@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
 
 const reportSchema = new mongoose.Schema({
-    reportImage: {
-        type: String,
-        required: [true, "Report image URL is required"],
-        trim: true
-    },
+    reportImage: [{
+        url: {
+            type: String,
+            required: true,
+        },
+        fileId: {
+            type: String,
+            required: true,
+        },
+    }],
     laboratoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Laboratory",

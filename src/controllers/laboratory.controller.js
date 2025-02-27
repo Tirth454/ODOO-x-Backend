@@ -2,6 +2,8 @@ import apiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Laboratory from "../models/laboratory.model.js";
+import Patient from "../models/patient.model.js";
+import Prescription from "../models/presciption.model.js";
 import nodeMailer from "nodemailer";
 
 const generateAccessAndRefreshToken = async (laboratoryId) => {
@@ -38,7 +40,7 @@ const registerLaboratory = asyncHandler(async (req, res) => {
         licenseNumber,
         address,
         contactNumber,
-        
+
     } = req.body;
 
     // Validate required fields
@@ -246,10 +248,140 @@ const logoutLaboratory = asyncHandler(async (req, res) => {
         .json(new apiResponse(200, {}, "Laboratory logged out successfully"));
 });
 
+const getReportsByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.body;
+
+    // Validate uniqueId
+    if (!uniqueId) {
+        throw new apiError(400, "Patient unique ID is required");
+    }
+
+    // Find patient
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        throw new apiError(404, "Patient not found");
+    }
+
+    // Find reports for the patient from the laboratory
+    const reports = await Report.find({
+        patientId: patient._id,
+        laboratoryId: req.laboratory._id
+    })
+        .populate('patientId', 'name uniqueId')
+        .populate('laboratoryId', 'name licenseNumber')
+
+    if (!reports.length) {
+        throw new apiError(404, "No reports found for this patient");
+    }
+
+    return res.status(200).json(
+        new apiResponse(
+            200,
+            {
+                reports
+            },
+            "Patient reports retrieved successfully"
+        )
+    );
+});
+
+const addReport = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.body; // Get uniqueId from request body
+    const laboratoryId = req.laboratory._id; // Get laboratory ID from the request context
+
+    if (!uniqueId) {
+        throw new apiError(400, "Patient unique ID is required");
+    }
+
+    if (!req.files || !req.files.reportImages || !req.files.reportImages.length) {
+        throw new apiError(400, "Report images are required");
+    }
+
+    // Find patient by unique ID
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        throw new apiError(404, "Patient not found");
+    }
+
+    const reportImages = [];
+    const getFormattedDate = () => {
+        const date = new Date();
+        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    };
+
+    // Upload report images
+    for (const file of req.files.reportImages) {
+        const fileContent = fs.readFileSync(file.path);
+        const response = await imagekit.upload({
+            file: fileContent,
+            fileName: `${getFormattedDate()}-${file.originalname}`,
+            folder: "/reports",
+        });
+        fs.unlinkSync(file.path); // Remove the file after uploading
+
+        reportImages.push({
+            url: response.url,
+            fileId: response.fileId,
+        });
+    }
+
+    // Create new report
+    const report = await Report.create({
+        laboratoryId,
+        patientId: patient._id,
+        reportImages,
+        createdAt: new Date()
+    });
+
+    // Add report ID to patient's reports array
+    await Patient.findByIdAndUpdate(
+        patient._id,
+        {
+            $push: { reports: report._id }
+        }
+    );
+
+    return res.status(201).json(
+        new apiResponse(201, report, "Report added successfully")
+    );
+});
+
+const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.body;
+
+    if (!uniqueId) {
+        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+    }
+
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Get all prescriptions for the patient
+    const prescriptions = await Prescription.find({ patientId: patient._id })
+        .populate('doctorId', 'name specialization')
+        .populate('patientId', 'name uniqueId');
+
+    if (!prescriptions.length) {
+        return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+    );
+});
+
+
+
+
 export {
     registerLaboratory,
     updateVerifyStatus,
     loginLaboratory,
     getCurrentLaboratory,
-    logoutLaboratory
+    logoutLaboratory,
+    getReportsByUniqueId,
+    addReport,
+    getPrescriptionsByUniqueId
 };
