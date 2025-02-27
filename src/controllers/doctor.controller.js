@@ -10,7 +10,6 @@ import fs from 'fs'
 import nodeMailer from "nodemailer";
 
 
-
 const generateAccessAndRefreshToken = async (doctorId) => {
     try {
         const doctor = await Doctor.findById(doctorId);
@@ -383,7 +382,7 @@ const getUpdatedAppointment = asyncHandler(async (req, res) => {
 });
 
 const getPatientByUniqueId = asyncHandler(async (req, res) => {
-    const { uniqueId } = req.params;
+    const { uniqueId } = req.body;
 
     if (!uniqueId) {
         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
@@ -414,43 +413,43 @@ const getPatientByUniqueId = asyncHandler(async (req, res) => {
     );
 });
 
-// const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
-//     const { uniqueId } = req.params;
-//     const doctorId = req.doctor._id;
+const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.params;
+    const doctorId = req.doctor._id;
 
-//     if (!uniqueId) {
-//         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
-//     }
+    if (!uniqueId) {
+        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+    }
 
-//     const patient = await Patient.findOne({ uniqueId });
-//     if (!patient) {
-//         return res.status(404).json(new apiError(404, {}, "Patient not found"));
-//     }
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
 
-//     // Check if doctor has an accepted appointment with this patient
-//     const existingAppointment = await Appointment.findOne({
-//         doctorId: doctorId,
-//         patientId: patient._id,
-//         isaccepted: true
-//     });
+    // Check if doctor has an accepted appointment with this patient
+    const existingAppointment = await Appointment.findOne({
+        doctorId: doctorId,
+        patientId: patient._id,
+        isaccepted: true
+    });
 
-//     if (!existingAppointment) {
-//         return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
-//     }
+    if (!existingAppointment) {
+        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+    }
 
-//     // Get all prescriptions for the patient
-//     const prescriptions = await Prescription.find({ patientId: patient._id })
-//         .populate('doctorId', 'name specialization')
-//         .populate('patientId', 'name uniqueId');
+    // Get all prescriptions for the patient
+    const prescriptions = await Prescription.find({ patientId: patient._id })
+        .populate('doctorId', 'name specialization')
+        .populate('patientId', 'name uniqueId');
 
-//     if (!prescriptions.length) {
-//         return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
-//     }
+    if (!prescriptions.length) {
+        return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
+    }
 
-//     return res.status(200).json(
-//         new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
-//     );
-// });
+    return res.status(200).json(
+        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+    );
+});
 
 // const getReportsByUniqueId = asyncHandler(async (req, res) => {
 //     const { uniqueId } = req.params;
@@ -544,7 +543,7 @@ const addPrescription = asyncHandler(async (req, res) => {
     const prescription = await Prescription.create({
         doctorId,
         patientId,
-        images: prescriptionImages,
+        prescriptionImage: prescriptionImages,
         createdAt: new Date()
     });
 

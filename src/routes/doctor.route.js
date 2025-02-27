@@ -26,7 +26,7 @@ router.route("/logout").post(checkAuth, logoutDoctor);
 router.route("/getUnacceptedAppointments").get(checkAuth, getUnacceptedAppointments);
 router.route("/updateAppointmentStatus").post(checkAuth, updateAppointmentStatus);
 router.route("/getUpdatedAppointment").get(checkAuth, getUpdatedAppointment);
-router.route("/getPatientByUniqueId").get(checkAuth, getPatientByUniqueId);
+router.route("/getPatientByUniqueId").post(checkAuth, getPatientByUniqueId);
 // router.route("/getPrescriptionsByUniqueId").get(checkAuth, getPrescriptionsByUniqueId);
 // router.route("/getReportsByUniqueId").get(checkAuth, getReportsByUniqueId);
 router.route("/addPrescription").post(checkAuth, upload.fields([

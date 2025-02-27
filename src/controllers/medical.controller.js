@@ -2,6 +2,8 @@ import apiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Medical from "../models/medical.model.js";
+import Patient from "../models/patient.model.js";
+import Prescription from "../models/presciption.model.js";
 import nodeMailer from "nodemailer";
 
 const generateAccessAndRefreshToken = async (medicalId) => {
@@ -255,6 +257,43 @@ const logoutMedical = asyncHandler(async (req, res) => {
         .json(new apiResponse(200, {}, medical.refreshToken
             ? "Medical center logged out successfully"
             : "No active session found"));
+});
+
+const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.params;
+    const doctorId = req.doctor._id;
+
+    if (!uniqueId) {
+        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+    }
+
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Check if doctor has an accepted appointment with this patient
+    const existingAppointment = await Appointment.findOne({
+        doctorId: doctorId,
+        patientId: patient._id,
+        isaccepted: true
+    });
+    if (!existingAppointment) {
+        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+    }
+
+    // Get all prescriptions for the patient
+    const prescriptions = await Prescription.find({ patientId: patient._id })
+        .populate('doctorId', 'name specialization')
+        .populate('patientId', 'name uniqueId');
+
+    if (!prescriptions.length) {
+        return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+    );
 });
 
 export { registerMedical, updateVerifyStatus, loginMedical, getCurrentMedical, logoutMedical };
