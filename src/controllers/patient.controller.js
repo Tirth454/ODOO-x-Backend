@@ -5,6 +5,7 @@ import Patient from "../models/patient.model.js"; // Import Patient model
 import Doctor from "../models/doctor.model.js";
 import Appointment from "../models/appointment.model.js";
 import Prescription from "../models/prescription.model.js";
+import Report from "../models/report.model.js";
 import nodeMailer from "nodemailer";
 
 
@@ -358,4 +359,24 @@ const getAllPrescriptions = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerPatient, updateVerifyStatus, patientLogin, getCurrentPatient, logoutPatient, getAllDoctor };
+const getAllReports = asyncHandler(async (req, res) => {
+    const patientId = req.patient._id;
+
+    const reports = await Report.find({ patientId });
+    if (!reports) {
+        return res.status(404).json(new apiError(404, {}, "No reports found"));
+    }
+    return res.status(200).json(new apiResponse(200, reports, "Reports retrieved successfully"))
+})
+
+export {
+    registerPatient,
+    updateVerifyStatus,
+    patientLogin,
+    getCurrentPatient,
+    logoutPatient,
+    getAllDoctor,
+    getAllReports,
+    bookAppiontment,
+    getAllPrescriptions
+};
