@@ -273,4 +273,6 @@ const logoutDoctor = asyncHandler(async (req, res) => {
             : "No active session found"));
 });
 
+
+
 export { registerDoctor, updateVerifyStatus, loginDoctor, getCurrentDoctor,logoutDoctor };

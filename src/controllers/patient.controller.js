@@ -2,6 +2,9 @@ import apiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Patient from "../models/patient.model.js"; // Import Patient model
+import Doctor from "../models/doctor.model.js";
+import Appointment from "../models/appointment.model.js";
+import Prescription from "../models/prescription.model.js";
 import nodeMailer from "nodemailer";
 
 
@@ -271,9 +274,88 @@ const logoutPatient = asyncHandler(async (req, res) => {
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new apiResponse(200, {}, patient.refreshToken 
-            ? "Patient logged out successfully" 
+        .json(new apiResponse(200, {}, patient.refreshToken
+            ? "Patient logged out successfully"
             : "No active session found"));
 });
 
-export { registerPatient, updateVerifyStatus, patientLogin, getCurrentPatient ,logoutPatient};
+const getAllDoctor = asyncHandler(async (req, res) => {
+    const doctors = await Doctor.find({})
+        .select("-password -refreshToken -email -__v -createdAt -updatedAt")
+        .select("name phoneNumber address specialization qualification experience")
+        .lean();
+
+    if (!doctors?.length) {
+        return res.status(404).json(new apiError(404, {}, "No doctors found"));
+    }
+
+    return res
+        .status(200)
+        .json(new apiResponse(200, doctors, "Doctors list retrieved successfully"));
+})
+
+const bookAppiontment = asyncHandler(async (req, res) => {
+    const { doctorId, date } = req.body;
+    const patientId = req.patient._id;
+
+    // Validate required fields
+    if (!doctorId || !date) {
+        return res.status(400).json(new apiError(400, {}, "Doctor ID and date are required"));
+    }
+
+    // Check if doctor exists
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+        return res.status(404).json(new apiError(404, {}, "Doctor not found"));
+    }
+
+    // Check if patient exists
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Check for existing appointment
+    const existingAppointment = await Appointment.findOne({
+        doctorId,
+        patientId,
+        date
+    });
+
+    if (existingAppointment) {
+        return res.status(409).json(new apiError(409, {}, "Appointment already exists for this date"));
+    }
+
+    // Create new appointment
+    const newAppointment = new Appointment({
+        patientId,
+        doctorId,
+        date,
+        isaccepted: false
+    });
+
+    // Save appointment and update doctor's appointments
+    const savedAppointment = await newAppointment.save();
+    doctor.appointments.push(savedAppointment._id);
+    await doctor.save();
+
+    return res.status(201).json(
+        new apiResponse(201, savedAppointment, "Appointment booked successfully")
+    );
+});
+
+const getAllPrescriptions = asyncHandler(async (req, res) => {
+    const patientId = req.patient._id;
+
+    const prescriptions = await Prescription.find({ patientId });
+
+    if (!prescriptions) {
+        return res.status(404).json(new apiError(404, {}, "No prescriptions found"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+    );
+});
+
+export { registerPatient, updateVerifyStatus, patientLogin, getCurrentPatient, logoutPatient, getAllDoctor };
