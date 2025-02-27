@@ -4,8 +4,8 @@ import apiResponse from "../utils/apiResponse.js";
 import Patient from "../models/patient.model.js"; // Import Patient model
 import Doctor from "../models/doctor.model.js";
 import Appointment from "../models/appointment.model.js";
-import Prescription from "../models/prescription.model.js";
-import Report from "../models/report.model.js";
+import Prescription from "../models/presciption.model.js";
+import Report from "../models/reports.model.js";
 import nodeMailer from "nodemailer";
 
 
