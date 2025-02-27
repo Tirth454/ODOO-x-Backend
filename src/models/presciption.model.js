@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
 
 const prescriptionSchema = new mongoose.Schema({
-    prescriptionImage: [{
-        type: String,
-        required: [true, "Prescription image URL is required"],
-        trim: true
-    }],
+    prescriptionImage: [ {
+        url: {
+          type: String,
+          required: true,
+        },
+        fileId: {
+          type: String,
+          required: true,
+        },
+      }],
     patientId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Patient",
