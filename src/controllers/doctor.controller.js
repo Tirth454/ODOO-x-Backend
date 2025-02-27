@@ -547,6 +547,14 @@ const addPrescription = asyncHandler(async (req, res) => {
         createdAt: new Date()
     });
 
+    // Add prescription ID to patient's prescriptions array
+    await Patient.findByIdAndUpdate(
+        patientId,
+        {
+            $push: { prescriptions: prescription._id }
+        }
+    );
+
     return res.status(201).json(
         new apiResponse(201, prescription, "Prescription added successfully")
     );
