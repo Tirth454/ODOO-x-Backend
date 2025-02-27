@@ -370,7 +370,7 @@ const getUpdatedAppointment = asyncHandler(async (req, res) => {
     const appointments = await Appointment.find({
         isaccepted: true,
         doctorId: doctorId
-    }).populate('patientId', 'name email uniqueId')
+    }).populate('patientId', 'name email uniqueId age gender phoneNumber')
         .select('date time isaccepted');
 
     if (!appointments.length) {
