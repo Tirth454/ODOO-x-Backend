@@ -390,6 +390,8 @@ const getPatientByUniqueId = asyncHandler(async (req, res) => {
     }
 
     const patient = await Patient.findOne({ uniqueId })
+        .populate("prescriptions")
+        .populate("reports")
         .select('-password -refreshToken'); // Exclude sensitive fields
 
     if (!patient) {
@@ -412,81 +414,81 @@ const getPatientByUniqueId = asyncHandler(async (req, res) => {
     );
 });
 
-const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
-    const { uniqueId } = req.params;
-    const doctorId = req.doctor._id;
+// const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
+//     const { uniqueId } = req.params;
+//     const doctorId = req.doctor._id;
 
-    if (!uniqueId) {
-        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
-    }
+//     if (!uniqueId) {
+//         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+//     }
 
-    const patient = await Patient.findOne({ uniqueId });
-    if (!patient) {
-        return res.status(404).json(new apiError(404, {}, "Patient not found"));
-    }
+//     const patient = await Patient.findOne({ uniqueId });
+//     if (!patient) {
+//         return res.status(404).json(new apiError(404, {}, "Patient not found"));
+//     }
 
-    // Check if doctor has an accepted appointment with this patient
-    const existingAppointment = await Appointment.findOne({
-        doctorId: doctorId,
-        patientId: patient._id,
-        isaccepted: true
-    });
+//     // Check if doctor has an accepted appointment with this patient
+//     const existingAppointment = await Appointment.findOne({
+//         doctorId: doctorId,
+//         patientId: patient._id,
+//         isaccepted: true
+//     });
 
-    if (!existingAppointment) {
-        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
-    }
+//     if (!existingAppointment) {
+//         return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+//     }
 
-    // Get all prescriptions for the patient
-    const prescriptions = await Prescription.find({ patientId: patient._id })
-        .populate('doctorId', 'name specialization')
-        .populate('patientId', 'name uniqueId');
+//     // Get all prescriptions for the patient
+//     const prescriptions = await Prescription.find({ patientId: patient._id })
+//         .populate('doctorId', 'name specialization')
+//         .populate('patientId', 'name uniqueId');
 
-    if (!prescriptions.length) {
-        return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
-    }
+//     if (!prescriptions.length) {
+//         return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
+//     }
 
-    return res.status(200).json(
-        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
-    );
-});
+//     return res.status(200).json(
+//         new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+//     );
+// });
 
-const getReportsByUniqueId = asyncHandler(async (req, res) => {
-    const { uniqueId } = req.params;
-    const doctorId = req.doctor._id;
+// const getReportsByUniqueId = asyncHandler(async (req, res) => {
+//     const { uniqueId } = req.params;
+//     const doctorId = req.doctor._id;
 
-    if (!uniqueId) {
-        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
-    }
+//     if (!uniqueId) {
+//         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+//     }
 
-    const patient = await Patient.findOne({ uniqueId });
-    if (!patient) {
-        return res.status(404).json(new apiError(404, {}, "Patient not found"));
-    }
+//     const patient = await Patient.findOne({ uniqueId });
+//     if (!patient) {
+//         return res.status(404).json(new apiError(404, {}, "Patient not found"));
+//     }
 
-    // Check if doctor has an accepted appointment with this patient
-    const existingAppointment = await Appointment.findOne({
-        doctorId: doctorId,
-        patientId: patient._id,
-        isaccepted: true
-    });
+//     // Check if doctor has an accepted appointment with this patient
+//     const existingAppointment = await Appointment.findOne({
+//         doctorId: doctorId,
+//         patientId: patient._id,
+//         isaccepted: true
+//     });
 
-    if (!existingAppointment) {
-        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
-    }
+//     if (!existingAppointment) {
+//         return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+//     }
 
-    // Get all reports for the patient
-    const reports = await Report.find({ patientId: patient._id })
-        .populate('doctorId', 'name specialization')
-        .populate('patientId', 'name uniqueId');
+//     // Get all reports for the patient
+//     const reports = await Report.find({ patientId: patient._id })
+//         .populate('doctorId', 'name specialization')
+//         .populate('patientId', 'name uniqueId');
 
-    if (!reports.length) {
-        return res.status(404).json(new apiError(404, {}, "No reports found for this patient"));
-    }
+//     if (!reports.length) {
+//         return res.status(404).json(new apiError(404, {}, "No reports found for this patient"));
+//     }
 
-    return res.status(200).json(
-        new apiResponse(200, reports, "Reports retrieved successfully")
-    );
-});
+//     return res.status(200).json(
+//         new apiResponse(200, reports, "Reports retrieved successfully")
+//     );
+// });
 
 const addPrescription = asyncHandler(async (req, res) => {
     const doctorId = req.doctor._id;
@@ -561,7 +563,7 @@ export {
     updateAppointmentStatus,
     getUpdatedAppointment,
     getPatientByUniqueId,
-    getPrescriptionsByUniqueId,
-    getReportsByUniqueId,
+    // getPrescriptionsByUniqueId,
+    // getReportsByUniqueId,
     addPrescription
 };

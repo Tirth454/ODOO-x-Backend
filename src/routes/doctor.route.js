@@ -9,8 +9,8 @@ import {
     updateAppointmentStatus,
     getUpdatedAppointment,
     getPatientByUniqueId,
-    getPrescriptionsByUniqueId,
-    getReportsByUniqueId,
+    // getPrescriptionsByUniqueId,
+    // getReportsByUniqueId,
     addPrescription
 } from "../controllers/doctor.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
@@ -27,8 +27,8 @@ router.route("/getUnacceptedAppointments").get(checkAuth, getUnacceptedAppointme
 router.route("/updateAppointmentStatus").post(checkAuth, updateAppointmentStatus);
 router.route("/getUpdatedAppointment").get(checkAuth, getUpdatedAppointment);
 router.route("/getPatientByUniqueId").get(checkAuth, getPatientByUniqueId);
-router.route("/getPrescriptionsByUniqueId").get(checkAuth, getPrescriptionsByUniqueId);
-router.route("/getReportsByUniqueId").get(checkAuth, getReportsByUniqueId);
+// router.route("/getPrescriptionsByUniqueId").get(checkAuth, getPrescriptionsByUniqueId);
+// router.route("/getReportsByUniqueId").get(checkAuth, getReportsByUniqueId);
 router.route("/addPrescription").post(checkAuth, upload.fields([
     {
         name: "PricptionImage",
