@@ -16,6 +16,6 @@ router.route("/verify").post(updateVerifyStatus);
 router.route("/login").post(loginMedical);
 router.route("/current").get(checkAuth, getCurrentMedical);
 router.route("/logout").post(checkAuth, logoutMedical)
-router.route("/getPrescriptionsByUniqueId").get(checkAuth, getPrescriptionsByUniqueId);
+router.route("/getPrescriptionsByUniqueId").post(checkAuth, getPrescriptionsByUniqueId);
 
 export default router;

@@ -260,7 +260,7 @@ const logoutMedical = asyncHandler(async (req, res) => {
 });
 
 const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
-    const { uniqueId } = req.params;
+    const { uniqueId } = req.body;
 
     if (!uniqueId) {
         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
