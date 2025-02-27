@@ -18,6 +18,15 @@ const generateAccessAndRefreshToken = async (laboratoryId) => {
         throw new apiError(500, "Error generating tokens");
     }
 };
+const generateotp = () => {
+    const characters = '0123456789';
+    let otp = '';
+    for (let i = 0; i < 6; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        otp += characters[randomIndex];
+    }
+    return otp;
+}
 
 // ... existing generateotp function ...
 
@@ -74,12 +83,11 @@ const registerLaboratory = asyncHandler(async (req, res) => {
         otp
     });
 
-    // Send verification email with OTP
     const transporter = nodeMailer.createTransport({
         service: "gmail",
         auth: {
-            user: process.env.SMTP_EMAIL,
-            pass: process.env.SMTP_PASSWORD,
+            user: "yellow06jacket@gmail.com",
+            pass: "utnk wfpt hlfq hqae",
         },
     });
 
