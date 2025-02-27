@@ -4,7 +4,8 @@ import {
     updateVerifyStatus,
     loginMedical,
     getCurrentMedical,
-    logoutMedical
+    logoutMedical,
+    getPrescriptionsByUniqueId
 } from "../controllers/medical.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
 
@@ -15,5 +16,6 @@ router.route("/verify").post(updateVerifyStatus);
 router.route("/login").post(loginMedical);
 router.route("/current").get(checkAuth, getCurrentMedical);
 router.route("/logout").post(checkAuth, logoutMedical)
+router.route("/getPrescriptionsByUniqueId").get(checkAuth, getPrescriptionsByUniqueId);
 
 export default router;

@@ -261,7 +261,6 @@ const logoutMedical = asyncHandler(async (req, res) => {
 
 const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
     const { uniqueId } = req.params;
-    const doctorId = req.doctor._id;
 
     if (!uniqueId) {
         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
@@ -270,16 +269,6 @@ const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
     const patient = await Patient.findOne({ uniqueId });
     if (!patient) {
         return res.status(404).json(new apiError(404, {}, "Patient not found"));
-    }
-
-    // Check if doctor has an accepted appointment with this patient
-    const existingAppointment = await Appointment.findOne({
-        doctorId: doctorId,
-        patientId: patient._id,
-        isaccepted: true
-    });
-    if (!existingAppointment) {
-        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
     }
 
     // Get all prescriptions for the patient
@@ -296,4 +285,4 @@ const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerMedical, updateVerifyStatus, loginMedical, getCurrentMedical, logoutMedical };
+export { registerMedical, updateVerifyStatus, loginMedical, getCurrentMedical, logoutMedical, getPrescriptionsByUniqueId };
