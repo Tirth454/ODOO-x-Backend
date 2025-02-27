@@ -3,6 +3,10 @@ import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Doctor from "../models/doctor.model.js";
 import Appointment from "../models/appointment.model.js";
+import Prescription from "../models/presciption.model.js";
+import Patient from "../models/patient.model.js";
+import imagekit from "../utils/ImageKit.js"
+import fs from 'fs'
 import nodeMailer from "nodemailer";
 
 
@@ -21,6 +25,7 @@ const generateAccessAndRefreshToken = async (doctorId) => {
         throw new apiError(500, "Error generating tokens");
     }
 };
+
 const generateotp = () => {
     const characters = '0123456789';
     let otp = '';
@@ -377,6 +382,175 @@ const getUpdatedAppointment = asyncHandler(async (req, res) => {
     );
 });
 
+const getPatientByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.params;
+
+    if (!uniqueId) {
+        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+    }
+
+    const patient = await Patient.findOne({ uniqueId })
+        .select('-password -refreshToken'); // Exclude sensitive fields
+
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Verify doctor has existing relationship with patient through accepted appointments
+    const existingAppointment = await Appointment.findOne({
+        doctorId: req.doctor._id,
+        patientId: patient._id,
+        isaccepted: true
+    });
+
+    if (!existingAppointment) {
+        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, patient, "Patient details retrieved successfully")
+    );
+});
+
+const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.params;
+    const doctorId = req.doctor._id;
+
+    if (!uniqueId) {
+        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+    }
+
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Check if doctor has an accepted appointment with this patient
+    const existingAppointment = await Appointment.findOne({
+        doctorId: doctorId,
+        patientId: patient._id,
+        isaccepted: true
+    });
+
+    if (!existingAppointment) {
+        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+    }
+
+    // Get all prescriptions for the patient
+    const prescriptions = await Prescription.find({ patientId: patient._id })
+        .populate('doctorId', 'name specialization')
+        .populate('patientId', 'name uniqueId');
+
+    if (!prescriptions.length) {
+        return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+    );
+});
+
+const getReportsByUniqueId = asyncHandler(async (req, res) => {
+    const { uniqueId } = req.params;
+    const doctorId = req.doctor._id;
+
+    if (!uniqueId) {
+        return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
+    }
+
+    const patient = await Patient.findOne({ uniqueId });
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Check if doctor has an accepted appointment with this patient
+    const existingAppointment = await Appointment.findOne({
+        doctorId: doctorId,
+        patientId: patient._id,
+        isaccepted: true
+    });
+
+    if (!existingAppointment) {
+        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+    }
+
+    // Get all reports for the patient
+    const reports = await Report.find({ patientId: patient._id })
+        .populate('doctorId', 'name specialization')
+        .populate('patientId', 'name uniqueId');
+
+    if (!reports.length) {
+        return res.status(404).json(new apiError(404, {}, "No reports found for this patient"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, reports, "Reports retrieved successfully")
+    );
+});
+
+const addPrescription = asyncHandler(async (req, res) => {
+    const doctorId = req.doctor._id;
+    const { patientId } = req.body;
+
+    if (!patientId) {
+        return res.status(400).json(new apiError(400, {}, "Patient ID is required"));
+    }
+
+    if (!req.files || !req.files.PricptionImage || !req.files.PricptionImage.length) {
+        return res.status(400).json(new apiError(400, {}, "Prescription images are required"));
+    }
+
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+        return res.status(404).json(new apiError(404, {}, "Patient not found"));
+    }
+
+    // Check if doctor has an accepted appointment with this patient
+    const existingAppointment = await Appointment.findOne({
+        doctorId: doctorId,
+        patientId: patientId,
+        isaccepted: true
+    });
+
+    if (!existingAppointment) {
+        return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
+    }
+
+    const prescriptionImages = [];
+    const getFormattedDate = () => {
+        const date = new Date();
+        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    };
+
+    // Upload prescription images
+    for (const file of req.files.PricptionImage) {
+        const fileContent = fs.readFileSync(file.path);
+        const response = await imagekit.upload({
+            file: fileContent,
+            fileName: `${getFormattedDate()}-${file.originalname}`,
+            folder: "/prescriptions",
+        });
+        fs.unlinkSync(file.path);
+
+        prescriptionImages.push({
+            url: response.url,
+            fileId: response.fileId,
+        });
+    }
+
+    // Create new prescription
+    const prescription = await Prescription.create({
+        doctorId,
+        patientId,
+        images: prescriptionImages,
+        createdAt: new Date()
+    });
+
+    return res.status(201).json(
+        new apiResponse(201, prescription, "Prescription added successfully")
+    );
+});
+
 export {
     registerDoctor,
     updateVerifyStatus,
@@ -385,5 +559,9 @@ export {
     logoutDoctor,
     getUnacceptedAppointments,
     updateAppointmentStatus,
-    getUpdatedAppointment
+    getUpdatedAppointment,
+    getPatientByUniqueId,
+    getPrescriptionsByUniqueId,
+    getReportsByUniqueId,
+    addPrescription
 };
