@@ -2,7 +2,9 @@ import apiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import apiResponse from "../utils/apiResponse.js";
 import Doctor from "../models/doctor.model.js";
+import Appointment from "../models/appointment.model.js";
 import nodeMailer from "nodemailer";
+
 
 
 const generateAccessAndRefreshToken = async (doctorId) => {
@@ -268,11 +270,120 @@ const logoutDoctor = asyncHandler(async (req, res) => {
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new apiResponse(200, {}, doctor.refreshToken 
-            ? "Doctor logged out successfully" 
+        .json(new apiResponse(200, {}, doctor.refreshToken
+            ? "Doctor logged out successfully"
             : "No active session found"));
 });
 
+const getUnacceptedAppointments = asyncHandler(async (req, res) => {
+    const doctorId = req.doctor._id;
 
+    const appointments = await Appointment.find({
+        doctorId,
+        isaccepted: false
+    }).populate({
+        path: 'patientId',
+        select: 'name phoneNumber address age gender dateOfBirth'
+    });
 
-export { registerDoctor, updateVerifyStatus, loginDoctor, getCurrentDoctor,logoutDoctor };
+    if (!appointments.length) {
+        return res.status(404).json(
+            new apiError(404, {}, "No unaccepted appointments found")
+        );
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, appointments, "Unaccepted appointments retrieved successfully")
+    );
+});
+
+const updateAppointmentStatus = asyncHandler(async (req, res) => {
+    const { appointmentId, status, time } = req.body;
+    const doctorId = req.doctor._id;
+
+    if (!appointmentId || !time || !status) {
+        return res.status(400).json(new apiError(400, {}, "Appointment ID, status and time are required"));
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+        return res.status(404).json(new apiError(404, {}, "Appointment not found"));
+    }
+
+    if (appointment.doctorId.toString() !== doctorId.toString()) {
+        return res.status(403).json(new apiError(403, {}, "Unauthorized to update this appointment"));
+    }
+
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+        appointmentId,
+        {
+            isaccepted: status === 'accepted',
+            time: time
+        },
+        { new: true }
+    ).populate('patientId', 'email name');
+
+    if (status === 'accepted') {
+        const transporter = nodeMailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: "yellow06jacket@gmail.com",
+                pass: "utnk wfpt hlfq hqae"
+            }
+        });
+
+        const mailOptions = {
+            from: '"HealthCare Portal" <healthcare@portal.com>',
+            to: updatedAppointment.patientId.email,
+            subject: 'Appointment Confirmation',
+            html: `
+                <h3>Your appointment has been confirmed!</h3>
+                <p>Dear ${updatedAppointment.patientId.name},</p>
+                <p>Your appointment with Dr. ${req.doctor.name} has been confirmed.</p>
+                <p>Date: ${new Date(updatedAppointment.date).toLocaleDateString()}</p>
+                <p>Time: ${updatedAppointment.time}</p>
+                <p>Please arrive 15 minutes before your scheduled time.</p>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (emailError) {
+            console.error('Error sending confirmation email:', emailError);
+            return res.status(500).json(new apiError(500, {}, "Appointment updated but failed to send confirmation email"));
+        }
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, updatedAppointment, "Appointment status updated successfully")
+    );
+});
+
+const getUpdatedAppointment = asyncHandler(async (req, res) => {
+    const doctorId = req.doctor._id;
+
+    const appointments = await Appointment.find({
+        isaccepted: true,
+        doctorId: doctorId
+    }).populate('patientId', 'name email uniqueId')
+        .select('date time isaccepted');
+
+    if (!appointments.length) {
+        return res.status(404).json(new apiError(404, {}, "No accepted appointments found"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, appointments, "Accepted appointments retrieved successfully")
+    );
+});
+
+export {
+    registerDoctor,
+    updateVerifyStatus,
+    loginDoctor,
+    getCurrentDoctor,
+    logoutDoctor,
+    getUnacceptedAppointments,
+    updateAppointmentStatus,
+    getUpdatedAppointment
+};
