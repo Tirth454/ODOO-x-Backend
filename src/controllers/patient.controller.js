@@ -282,7 +282,7 @@ const logoutPatient = asyncHandler(async (req, res) => {
 
 const getAllDoctor = asyncHandler(async (req, res) => {
     const doctors = await Doctor.find({})
-        .select("-password -refreshToken -email -__v -createdAt -updatedAt")
+        .select("-password -refreshToken -email -__v -createdAt -updatedAt -otp -licenseNumber -gender -appointments -age -patients ")
         .select("name phoneNumber address specialization qualification experience")
         .lean();
 
