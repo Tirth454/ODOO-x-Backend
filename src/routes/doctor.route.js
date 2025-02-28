@@ -11,7 +11,8 @@ import {
     getPatientByUniqueId,
     addPrescription,
     updateAttendedStatus,
-    addCamp
+    addCamp,
+    getSuggestions
 } from "../controllers/doctor.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -35,6 +36,10 @@ router.route("/addPrescription").post(checkAuth, upload.fields([
 ]), addPrescription);
 router.route("/updateAttendedStatus").post(checkAuth, updateAttendedStatus);
 router.route("/addCamp").post(checkAuth, addCamp);
+router.route("/get-suggestions").get(
+    checkAuth,
+    getSuggestions
+);
 
 
 export default router;

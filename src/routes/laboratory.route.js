@@ -7,7 +7,8 @@ import {
     logoutLaboratory,
     getReportsByUniqueId,
     addReport,
-    getPrescriptionsByUniqueId
+    getPrescriptionsByUniqueId,
+    getSuggestions
 } from "../controllers/laboratory.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -27,5 +28,9 @@ router.route("/addReport").post(checkAuth, upload.fields([
     }
 ]), addReport);
 router.route("/getPrescriptionsByUniqueId").post(checkAuth, getPrescriptionsByUniqueId);
+router.route("/get-suggestions").get(
+    checkAuth,
+    getSuggestions
+);
 
 export default router;

@@ -26,6 +26,36 @@ const generateAccessAndRefreshToken = async (doctorId) => {
     }
 };
 
+const getSuggestionsForInput = async (input) => {
+    const apikey = process.env.GOOGLE_MAPS_API;
+    const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+            input
+        )}&key=${apikey}`
+    );
+    try {
+        if (response.data.status === "OK") {
+            const suggestions = response.data.predictions.map((prediction) => {
+                return prediction;
+            });
+            return suggestions;
+        } else {
+            throw new apiError(
+                400,
+                "Could not find coordinates for the given address"
+            );
+        }
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        throw new apiError(
+            500,
+            "Error getting coordinates from Google Maps API"
+        );
+    }
+};
+
 const generateotp = () => {
     const characters = '0123456789';
     let otp = '';
@@ -35,6 +65,26 @@ const generateotp = () => {
     }
     return otp;
 }
+
+const getSuggestions = asyncHandler(async (req, res) => {
+    const { input } = req.query;
+    if (!input) {
+        throw new apiError(400, "Unable to get Input")
+    }
+    try {
+        const suggestions = await getSuggestionsForInput(input);
+        return res.json(
+            new apiResponse(200, suggestions, "Suggestions Found", [])
+        );
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        console.log(error);
+
+        throw new apiError(500, "Error getting suggestions");
+    }
+});
 
 const registerDoctor = asyncHandler(async (req, res) => {
     const {
@@ -542,5 +592,6 @@ export {
     getPatientByUniqueId,
     addPrescription,
     updateAttendedStatus,
-    addCamp
+    addCamp,
+    getSuggestions
 };

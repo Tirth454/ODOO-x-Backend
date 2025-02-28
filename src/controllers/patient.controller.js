@@ -9,6 +9,35 @@ import Camp from "../models/camp.model.js";
 import Report from "../models/reports.model.js";
 import nodeMailer from "nodemailer";
 
+const getSuggestionsForInput = async (input) => {
+    const apikey = process.env.GOOGLE_MAPS_API;
+    const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+            input
+        )}&key=${apikey}`
+    );
+    try {
+        if (response.data.status === "OK") {
+            const suggestions = response.data.predictions.map((prediction) => {
+                return prediction;
+            });
+            return suggestions;
+        } else {
+            throw new apiError(
+                400,
+                "Could not find coordinates for the given address"
+            );
+        }
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        throw new apiError(
+            500,
+            "Error getting coordinates from Google Maps API"
+        );
+    }
+};
 
 // Register Patient
 const generateUniqueId = () => {
@@ -28,6 +57,29 @@ const generateUniqueId = () => {
     return letters + numbers;
 }
 
+const getAddressCoordinates = async (address) => {
+    const apikey = process.env.GOOGLE_MAPS_API;
+    if (!apikey) throw new apiError(500, "Google Maps API key not configured");
+
+    try {
+        const response = await axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apikey}`
+        );
+
+        if (response.data.status !== "OK") {
+            throw new apiError(400, "Could not find coordinates for the given address");
+        }
+
+        const location = response.data.results[0].geometry.location;
+        return {
+            ltd: location.lat,
+            lng: location.lng
+        };
+    } catch (error) {
+        throw error instanceof apiError ? error : new apiError(500, "Error getting coordinates from Google Maps API");
+    }
+};
+
 const generateAccessAndRefreshToken = async (patientId) => {
     try {
         const patient = await Patient.findById(patientId);
@@ -42,6 +94,56 @@ const generateAccessAndRefreshToken = async (patientId) => {
         throw new apiError(500, "Error generating tokens");
     }
 };
+
+const calculateDistanceWithGoogle = async (point1, point2) => {
+    const apikey = process.env.GOOGLE_MAPS_API;
+    if (!apikey) throw new apiError(500, "Google Maps API key not configured");
+
+    try {
+        const OriginCoords = point1.ltd && point1.lng ? point1 : await getAddressCoordinates(point1);
+        const DestinationCoords = point2.ltd && point2.lng ? point2 : await getAddressCoordinates(point2);
+
+        const origin = `${OriginCoords.ltd},${OriginCoords.lng}`;
+        const destination = `${DestinationCoords.ltd},${DestinationCoords.lng}`;
+
+        const response = await axios.get(
+            `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apikey}`
+        );
+
+        if (response.data.status !== "OK") {
+            throw new apiError(400, "Invalid response from Google Distance Matrix API");
+        }
+
+        const result = response.data.rows[0].elements[0];
+        return {
+            distance: {
+                text: result.status === "OK" ? result.distance.text : "Distance unavailable"
+            }
+        };
+    } catch (error) {
+        throw error instanceof apiError ? error : new apiError(500, "Error calculating distance using Google Distance Matrix API");
+    }
+};
+
+const getSuggestions = asyncHandler(async (req, res) => {
+    const { input } = req.query;
+    if (!input) {
+        throw new apiError(400, "Unable to get Input")
+    }
+    try {
+        const suggestions = await getSuggestionsForInput(input);
+        return res.json(
+            new apiResponse(200, suggestions, "Suggestions Found", [])
+        );
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        console.log(error);
+
+        throw new apiError(500, "Error getting suggestions");
+    }
+});
 
 const registerPatient = asyncHandler(async (req, res) => {
     const { name, age, gender, dateOfBirth, email, password, phoneNumber, address } = req.body;
@@ -282,6 +384,12 @@ const logoutPatient = asyncHandler(async (req, res) => {
 });
 
 const getAllDoctor = asyncHandler(async (req, res) => {
+    const { patientLocation } = req.body; // Expecting latitude and longitude from the frontend
+
+    if (!patientLocation || !patientLocation.ltd || !patientLocation.lng) {
+        return res.status(400).json(new apiError(400, {}, "Patient location is required"));
+    }
+
     const doctors = await Doctor.find({})
         .select("-password -refreshToken -email -__v -createdAt -updatedAt -otp -licenseNumber -gender -appointments -age -patients ")
         .select("name phoneNumber address specialization qualification experience")
@@ -291,10 +399,20 @@ const getAllDoctor = asyncHandler(async (req, res) => {
         return res.status(404).json(new apiError(404, {}, "No doctors found"));
     }
 
+    // Calculate distance for each doctor
+    const doctorsWithDistance = await Promise.all(doctors.map(async (doctor) => {
+        const distance = await calculateDistanceWithGoogle(patientLocation, doctor.address);
+        return {
+            ...doctor,
+            distance: distance.distance.text // Assuming distance object has a text property
+        };
+    }));
+
     return res
         .status(200)
-        .json(new apiResponse(200, doctors, "Doctors list retrieved successfully"));
-})
+        .json(new apiResponse(200, doctorsWithDistance, "Doctors list retrieved successfully"));
+});
+
 
 const bookAppiontment = asyncHandler(async (req, res) => {
     const { doctorId, date } = req.body;
@@ -407,5 +525,6 @@ export {
     bookAppiontment,
     getAllPrescriptions,
     getBookedAppointment,
-    getCamp
+    getCamp,
+    getSuggestions
 };

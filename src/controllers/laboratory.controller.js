@@ -9,6 +9,37 @@ import imagekit from "../utils/ImageKit.js"
 import nodeMailer from "nodemailer";
 import Report from '../models/reports.model.js'
 
+
+const getSuggestionsForInput = async (input) => {
+    const apikey = process.env.GOOGLE_MAPS_API;
+    const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+            input
+        )}&key=${apikey}`
+    );
+    try {
+        if (response.data.status === "OK") {
+            const suggestions = response.data.predictions.map((prediction) => {
+                return prediction;
+            });
+            return suggestions;
+        } else {
+            throw new apiError(
+                400,
+                "Could not find coordinates for the given address"
+            );
+        }
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        throw new apiError(
+            500,
+            "Error getting coordinates from Google Maps API"
+        );
+    }
+};
+
 const generateAccessAndRefreshToken = async (laboratoryId) => {
     try {
         const laboratory = await Laboratory.findById(laboratoryId);
@@ -33,7 +64,25 @@ const generateotp = () => {
     return otp;
 }
 
-// ... existing generateotp function ...
+const getSuggestions = asyncHandler(async (req, res) => {
+    const { input } = req.query;
+    if (!input) {
+        throw new apiError(400, "Unable to get Input")
+    }
+    try {
+        const suggestions = await getSuggestionsForInput(input);
+        return res.json(
+            new apiResponse(200, suggestions, "Suggestions Found", [])
+        );
+    } catch (error) {
+        if (error instanceof apiError) {
+            throw error;
+        }
+        console.log(error);
+
+        throw new apiError(500, "Error getting suggestions");
+    }
+});
 
 const registerLaboratory = asyncHandler(async (req, res) => {
     const {
@@ -356,22 +405,31 @@ const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
     }
 
-    const patient = await Patient.findOne({ uniqueId });
+    const patient = await Patient.findOne({ uniqueId }).select("name");
     if (!patient) {
         return res.status(404).json(new apiError(404, {}, "Patient not found"));
     }
 
-    // Get all prescriptions for the patient
-    const prescriptions = await Prescription.find({ patientId: patient._id })
-        .populate('doctorId', 'name specialization')
-        .populate('patientId', 'name uniqueId');
+    // Get all prescriptions for the patient and populate doctor details
+    const prescriptions = await Prescription.find({ patientId: patient._id }).populate({
+        path: 'doctorId',
+        select: 'name specialization'
+    });
 
     if (!prescriptions.length) {
         return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
     }
 
+    // Extract prescription images and doctor details
+    const prescriptionDetails = prescriptions.map(prescription => ({
+        prescriptionImages: prescription.prescriptionImage,
+        patientName: patient.name,
+        doctorName: prescription.doctorId.name,
+        doctorSpecialization: prescription.doctorId.specialization
+    }));
+
     return res.status(200).json(
-        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
+        new apiResponse(200, prescriptionDetails, "Prescriptions retrieved successfully")
     );
 });
 
@@ -387,5 +445,6 @@ export {
     logoutLaboratory,
     getReportsByUniqueId,
     addReport,
-    getPrescriptionsByUniqueId
+    getPrescriptionsByUniqueId,
+    getSuggestions
 };

@@ -5,7 +5,8 @@ import {
     loginMedical,
     getCurrentMedical,
     logoutMedical,
-    getPrescriptionsByUniqueId
+    getPrescriptionsByUniqueId,
+    getSuggestions
 } from "../controllers/medical.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
 
@@ -17,5 +18,9 @@ router.route("/login").post(loginMedical);
 router.route("/current").get(checkAuth, getCurrentMedical);
 router.route("/logout").post(checkAuth, logoutMedical)
 router.route("/getPrescriptionsByUniqueId").post(checkAuth, getPrescriptionsByUniqueId);
+router.route("/get-suggestions").get(
+    checkAuth,
+    getSuggestions
+);
 
 export default router;
