@@ -8,6 +8,7 @@ import Prescription from "../models/presciption.model.js";
 import Camp from "../models/camp.model.js";
 import Report from "../models/reports.model.js";
 import nodeMailer from "nodemailer";
+import axios from "axios";
 
 const getSuggestionsForInput = async (input) => {
     const apikey = process.env.GOOGLE_MAPS_API;
@@ -48,14 +49,14 @@ const generateUniqueId = () => {
     // Use array methods instead of loops for better performance
     const letters = Array.from({ length: LETTER_LENGTH }, () =>
         String.fromCharCode(65 + Math.floor(Math.random() * 26))
-    ).join('');
+    ).join("");
 
     const numbers = Array.from({ length: NUMBER_LENGTH }, () =>
         Math.floor(Math.random() * 10)
-    ).join('');
+    ).join("");
 
     return letters + numbers;
-}
+};
 
 const getAddressCoordinates = async (address) => {
     const apikey = process.env.GOOGLE_MAPS_API;
@@ -63,11 +64,16 @@ const getAddressCoordinates = async (address) => {
 
     try {
         const response = await axios.get(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apikey}`
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+                address
+            )}&key=${apikey}`
         );
 
         if (response.data.status !== "OK") {
-            throw new apiError(400, "Could not find coordinates for the given address");
+            throw new apiError(
+                400,
+                "Could not find coordinates for the given address"
+            );
         }
 
         const location = response.data.results[0].geometry.location;
@@ -76,7 +82,13 @@ const getAddressCoordinates = async (address) => {
             lng: location.lng
         };
     } catch (error) {
-        throw error instanceof apiError ? error : new apiError(500, "Error getting coordinates from Google Maps API");
+        console.log(error); 
+        throw error instanceof apiError
+            ? error
+            : new apiError(
+                  500,
+                  "Error getting coordinates from Google Maps API"
+              );
     }
 };
 
@@ -100,35 +112,54 @@ const calculateDistanceWithGoogle = async (point1, point2) => {
     if (!apikey) throw new apiError(500, "Google Maps API key not configured");
 
     try {
-        const OriginCoords = point1.ltd && point1.lng ? point1 : await getAddressCoordinates(point1);
-        const DestinationCoords = point2.ltd && point2.lng ? point2 : await getAddressCoordinates(point2);
+        const OriginCoords =
+            point1.ltd && point1.lng
+                ? point1
+                : await getAddressCoordinates(point1);
+        const DestinationCoords =
+            point2.ltd && point2.lng
+                ? point2
+                : await getAddressCoordinates(point2);
 
         const origin = `${OriginCoords.ltd},${OriginCoords.lng}`;
         const destination = `${DestinationCoords.ltd},${DestinationCoords.lng}`;
 
         const response = await axios.get(
-            `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apikey}`
+            `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(
+                origin
+            )}&destinations=${encodeURIComponent(destination)}&key=${apikey}`
         );
 
         if (response.data.status !== "OK") {
-            throw new apiError(400, "Invalid response from Google Distance Matrix API");
+            throw new apiError(
+                400,
+                "Invalid response from Google Distance Matrix API"
+            );
         }
 
         const result = response.data.rows[0].elements[0];
         return {
             distance: {
-                text: result.status === "OK" ? result.distance.text : "Distance unavailable"
+                text:
+                    result.status === "OK"
+                        ? result.distance.text
+                        : "Distance unavailable"
             }
         };
     } catch (error) {
-        throw error instanceof apiError ? error : new apiError(500, "Error calculating distance using Google Distance Matrix API");
+        throw error instanceof apiError
+            ? error
+            : new apiError(
+                  500,
+                  "Error calculating distance using Google Distance Matrix API"
+              );
     }
 };
 
 const getSuggestions = asyncHandler(async (req, res) => {
     const { input } = req.query;
     if (!input) {
-        throw new apiError(400, "Unable to get Input")
+        throw new apiError(400, "Unable to get Input");
     }
     try {
         const suggestions = await getSuggestionsForInput(input);
@@ -146,34 +177,70 @@ const getSuggestions = asyncHandler(async (req, res) => {
 });
 
 const registerPatient = asyncHandler(async (req, res) => {
-    const { name, age, gender, dateOfBirth, email, password, phoneNumber, address } = req.body;
+    const {
+        name,
+        age,
+        gender,
+        dateOfBirth,
+        email,
+        password,
+        phoneNumber,
+        address
+    } = req.body;
 
     // Validate required fields
-    if (!name || !age || !gender || !dateOfBirth || !email || !password || !phoneNumber || !address) {
-        return res.status(400).json(new apiError(400, {}, "All fields are required"));
+    if (
+        !name ||
+        !age ||
+        !gender ||
+        !dateOfBirth ||
+        !email ||
+        !password ||
+        !phoneNumber ||
+        !address
+    ) {
+        return res
+            .status(400)
+            .json(new apiError(400, {}, "All fields are required"));
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        return res.status(400).json(new apiError(400, {}, "Invalid email format"));
+        return res
+            .status(400)
+            .json(new apiError(400, {}, "Invalid email format"));
     }
 
     // Validate age
     if (age <= 0) {
-        return res.status(400).json(new apiError(400, {}, "Age must be a positive number"));
+        return res
+            .status(400)
+            .json(new apiError(400, {}, "Age must be a positive number"));
     }
 
     // Validate gender
-    const validGenders = ['Male', 'Female', 'Other'];
+    const validGenders = ["Male", "Female", "Other"];
     if (!validGenders.includes(gender)) {
-        return res.status(400).json(new apiError(400, {}, "Gender must be Male, Female, or Other"));
+        return res
+            .status(400)
+            .json(
+                new apiError(400, {}, "Gender must be Male, Female, or Other")
+            );
     }
 
     // Check if patient already exists with the given email
     const existingPatient = await Patient.findOne({ email });
     if (existingPatient) {
-        return res.status(400).json(new apiError(400, {}, "Patient already registered with this email"));
+        return res
+            .status(400)
+            .json(
+                new apiError(
+                    400,
+                    {},
+                    "Patient already registered with this email"
+                )
+            );
     }
 
     // Generate unique ID and check if it already exists
@@ -206,8 +273,8 @@ const registerPatient = asyncHandler(async (req, res) => {
         service: "gmail",
         auth: {
             user: "yellow06jacket@gmail.com",
-            pass: "utnk wfpt hlfq hqae",
-        },
+            pass: "utnk wfpt hlfq hqae"
+        }
     });
 
     const info = await transporter.sendMail({
@@ -262,14 +329,21 @@ Note: This is an automated message. Please do not reply to this email.`,
     });
 
     // Get patient details without sensitive information
-    const patientDetails = await Patient.findById(patient._id).select("-password -refreshToken");
+    const patientDetails = await Patient.findById(patient._id).select(
+        "-password -refreshToken"
+    );
 
-    res.status(201).json(new apiResponse(201, {
-        patient: patientDetails,
-        uniqueId
-    }, "Patient registered successfully and verification email sent"));
+    res.status(201).json(
+        new apiResponse(
+            201,
+            {
+                patient: patientDetails,
+                uniqueId
+            },
+            "Patient registered successfully and verification email sent"
+        )
+    );
 });
-
 
 const updateVerifyStatus = asyncHandler(async (req, res) => {
     const { uniqueId } = req.body;
@@ -284,9 +358,15 @@ const updateVerifyStatus = asyncHandler(async (req, res) => {
         return res.status(404).json(new apiError(404, {}, "Patient not found"));
     }
 
-    return res.status(200).json(new apiResponse(200, {
-        patient
-    }, "Patient verified successfully"));
+    return res.status(200).json(
+        new apiResponse(
+            200,
+            {
+                patient
+            },
+            "Patient verified successfully"
+        )
+    );
 });
 
 const patientLogin = asyncHandler(async (req, res) => {
@@ -294,7 +374,9 @@ const patientLogin = asyncHandler(async (req, res) => {
 
     // Validate required fields
     if (!uniqueId || !password) {
-        return res.status(400).json(new apiError(400, {}, "All fields are required"));
+        return res
+            .status(400)
+            .json(new apiError(400, {}, "All fields are required"));
     }
 
     // Find patient by uniqueId
@@ -306,21 +388,29 @@ const patientLogin = asyncHandler(async (req, res) => {
 
     // Check if patient is verified
     if (!patient.isVerified) {
-        return res.status(401).json(new apiError(401, {}, "Please verify your account first"));
+        return res
+            .status(401)
+            .json(new apiError(401, {}, "Please verify your account first"));
     }
 
     // Check password
     const isPasswordValid = await patient.isPasswordCorrect(password);
 
     if (!isPasswordValid) {
-        return res.status(401).json(new apiError(401, {}, "Invalid credentials"));
+        return res
+            .status(401)
+            .json(new apiError(401, {}, "Invalid credentials"));
     }
 
     // Generate access and refresh tokens
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(patient._id);
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+        patient._id
+    );
 
     // Get patient details without sensitive information
-    const loggedInPatient = await Patient.findById(patient._id).select("-password -refreshToken");
+    const loggedInPatient = await Patient.findById(patient._id).select(
+        "-password -refreshToken"
+    );
 
     // Set cookies options
     const options = {
@@ -333,11 +423,17 @@ const patientLogin = asyncHandler(async (req, res) => {
         .status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
-        .json(new apiResponse(200, {
-            patient: loggedInPatient,
-            accessToken,
-            refreshToken
-        }, "Patient logged in successfully"));
+        .json(
+            new apiResponse(
+                200,
+                {
+                    patient: loggedInPatient,
+                    accessToken,
+                    refreshToken
+                },
+                "Patient logged in successfully"
+            )
+        );
 });
 
 const getCurrentPatient = asyncHandler(async (req, res) => {
@@ -371,28 +467,42 @@ const logoutPatient = asyncHandler(async (req, res) => {
     // Clear cookies with proper invalidation
     const options = {
         httpOnly: true,
-        secure: true,
+        secure: true
     };
 
     return res
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new apiResponse(200, {}, patient.refreshToken
-            ? "Patient logged out successfully"
-            : "No active session found"));
+        .json(
+            new apiResponse(
+                200,
+                {},
+                patient.refreshToken
+                    ? "Patient logged out successfully"
+                    : "No active session found"
+            )
+        );
 });
 
 const getAllDoctor = asyncHandler(async (req, res) => {
-    const { patientLocation } = req.body; // Expecting latitude and longitude from the frontend
+    // const { patientLocation } = req.body; // Expecting latitude and longitude from the frontend
+    const { patientLat, patientLng } = req.query;
+    console.log(patientLat, patientLng);
 
-    if (!patientLocation || !patientLocation.ltd || !patientLocation.lng) {
-        return res.status(400).json(new apiError(400, {}, "Patient location is required"));
+    if (!patientLat || !patientLng) {
+        return res
+            .status(400)
+            .json(new apiError(400, {}, "Patient location is required"));
     }
 
     const doctors = await Doctor.find({})
-        .select("-password -refreshToken -email -__v -createdAt -updatedAt -otp -licenseNumber -gender -appointments -age -patients ")
-        .select("name phoneNumber address specialization qualification experience")
+        .select(
+            "-password -refreshToken -email -__v -createdAt -updatedAt -otp -licenseNumber -gender -appointments -age -patients "
+        )
+        .select(
+            "name phoneNumber address specialization qualification experience"
+        )
         .lean();
 
     if (!doctors?.length) {
@@ -400,19 +510,29 @@ const getAllDoctor = asyncHandler(async (req, res) => {
     }
 
     // Calculate distance for each doctor
-    const doctorsWithDistance = await Promise.all(doctors.map(async (doctor) => {
-        const distance = await calculateDistanceWithGoogle(patientLocation, doctor.address);
-        return {
-            ...doctor,
-            distance: distance.distance.text // Assuming distance object has a text property
-        };
-    }));
+    const doctorsWithDistance = await Promise.all(
+        doctors.map(async (doctor) => {
+            const distance = await calculateDistanceWithGoogle(
+                { ltd: patientLat, lng: patientLng },
+                doctor.address
+            );
+            return {
+                ...doctor,
+                distance: distance.distance.text // Assuming distance object has a text property
+            };
+        })
+    );
 
     return res
         .status(200)
-        .json(new apiResponse(200, doctorsWithDistance, "Doctors list retrieved successfully"));
+        .json(
+            new apiResponse(
+                200,
+                doctorsWithDistance,
+                "Doctors list retrieved successfully"
+            )
+        );
 });
-
 
 const bookAppiontment = asyncHandler(async (req, res) => {
     const { doctorId, date } = req.body;
@@ -420,7 +540,9 @@ const bookAppiontment = asyncHandler(async (req, res) => {
 
     // Validate required fields
     if (!doctorId || !date) {
-        return res.status(400).json(new apiError(400, {}, "Doctor ID and date are required"));
+        return res
+            .status(400)
+            .json(new apiError(400, {}, "Doctor ID and date are required"));
     }
 
     // Check if doctor exists
@@ -443,7 +565,15 @@ const bookAppiontment = asyncHandler(async (req, res) => {
     });
 
     if (existingAppointment) {
-        return res.status(409).json(new apiError(409, {}, "Appointment already exists for this date"));
+        return res
+            .status(409)
+            .json(
+                new apiError(
+                    409,
+                    {},
+                    "Appointment already exists for this date"
+                )
+            );
     }
 
     // Create new appointment
@@ -459,9 +589,15 @@ const bookAppiontment = asyncHandler(async (req, res) => {
     doctor.appointments.push(savedAppointment._id);
     await doctor.save();
 
-    return res.status(201).json(
-        new apiResponse(201, savedAppointment, "Appointment booked successfully")
-    );
+    return res
+        .status(201)
+        .json(
+            new apiResponse(
+                201,
+                savedAppointment,
+                "Appointment booked successfully"
+            )
+        );
 });
 
 const getAllPrescriptions = asyncHandler(async (req, res) => {
@@ -470,12 +606,20 @@ const getAllPrescriptions = asyncHandler(async (req, res) => {
     const prescriptions = await Prescription.find({ patientId });
 
     if (!prescriptions) {
-        return res.status(404).json(new apiError(404, {}, "No prescriptions found"));
+        return res
+            .status(404)
+            .json(new apiError(404, {}, "No prescriptions found"));
     }
 
-    return res.status(200).json(
-        new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                prescriptions,
+                "Prescriptions retrieved successfully"
+            )
+        );
 });
 
 const getAllReports = asyncHandler(async (req, res) => {
@@ -485,33 +629,54 @@ const getAllReports = asyncHandler(async (req, res) => {
     if (!reports) {
         return res.status(404).json(new apiError(404, {}, "No reports found"));
     }
-    return res.status(200).json(new apiResponse(200, reports, "Reports retrieved successfully"))
-})
+    return res
+        .status(200)
+        .json(new apiResponse(200, reports, "Reports retrieved successfully"));
+});
 
 const getBookedAppointment = asyncHandler(async (req, res) => {
     const patientId = req.patient._id;
 
     // Find all appointments for the patient with attended status false
-    const appointments = await Appointment.find({ patientId, attended: false }).populate("doctorId", "name");
+    const appointments = await Appointment.find({
+        patientId,
+        attended: false
+    }).populate("doctorId", "name");
 
     if (!appointments || appointments.length === 0) {
-        return res.status(404).json(new apiError(404, {}, "No booked appointments found for this patient"));
+        return res
+            .status(404)
+            .json(
+                new apiError(
+                    404,
+                    {},
+                    "No booked appointments found for this patient"
+                )
+            );
     }
 
-    return res.status(200).json(
-        new apiResponse(200, appointments, "Booked appointments retrieved successfully")
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                appointments,
+                "Booked appointments retrieved successfully"
+            )
+        );
 });
 
 const getCamp = asyncHandler(async (req, res) => {
     // Fetch all camps from the database
-    const camps = await Camp.find().populate('campOrganizer', 'name');
+    const camps = await Camp.find().populate("campOrganizer", "name");
 
     if (!camps.length) {
         return res.status(404).json(new apiError(404, {}, "No camps found"));
     }
 
-    return res.status(200).json(new apiResponse(200, camps, "Camps retrieved successfully"));
+    return res
+        .status(200)
+        .json(new apiResponse(200, camps, "Camps retrieved successfully"));
 });
 
 export {
