@@ -375,6 +375,7 @@ const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
 
 
 
+
 export {
     registerLaboratory,
     updateVerifyStatus,
