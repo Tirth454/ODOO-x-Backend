@@ -27,7 +27,7 @@ router.route("/getAllReports").get(checkAuth, getAllReports)
 router.route("/getAllPrescriptions").get(checkAuth, getAllPrescriptions)
 router.route("/bookAppiontment").post(checkAuth, bookAppiontment)
 router.route("/getBookedAppointment").get(checkAuth, getBookedAppointment)
-router.route("/getCamp").post(checkAuth, getCamp)
+router.route("/getCamp").get(checkAuth, getCamp)
 router.route("/get-suggestions").get(
     checkAuth,
     getSuggestions
