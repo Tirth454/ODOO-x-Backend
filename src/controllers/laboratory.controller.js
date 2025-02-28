@@ -410,26 +410,28 @@ const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
         return res.status(404).json(new apiError(404, {}, "Patient not found"));
     }
 
-    // Get all prescriptions for the patient and populate doctor details
-    const prescriptions = await Prescription.find({ patientId: patient._id }).populate({
-        path: 'doctorId',
-        select: 'name specialization'
-    });
+    // Get the latest prescription for the patient and populate doctor details
+    const prescription = await Prescription.findOne({ patientId: patient._id })
+        .sort({ createdAt: -1 }) // Sort by createdAt in descending order to get the latest
+        .populate({
+            path: 'doctorId',
+            select: 'name specialization'
+        });
 
-    if (!prescriptions.length) {
+    if (!prescription) {
         return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
     }
 
     // Extract prescription images and doctor details
-    const prescriptionDetails = prescriptions.map(prescription => ({
+    const prescriptionDetails = {
         prescriptionImages: prescription.prescriptionImage,
         patientName: patient.name,
         doctorName: prescription.doctorId.name,
         doctorSpecialization: prescription.doctorId.specialization
-    }));
+    };
 
     return res.status(200).json(
-        new apiResponse(200, prescriptionDetails, "Prescriptions retrieved successfully")
+        new apiResponse(200, prescriptionDetails, "Latest prescription retrieved successfully")
     );
 });
 
