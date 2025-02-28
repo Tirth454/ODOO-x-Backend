@@ -5,6 +5,7 @@ import Patient from "../models/patient.model.js"; // Import Patient model
 import Doctor from "../models/doctor.model.js";
 import Appointment from "../models/appointment.model.js";
 import Prescription from "../models/presciption.model.js";
+import Camp from "../models/camp.model.js";
 import Report from "../models/reports.model.js";
 import nodeMailer from "nodemailer";
 
@@ -384,6 +385,17 @@ const getBookedAppointment = asyncHandler(async (req, res) => {
     );
 });
 
+const getCamp = asyncHandler(async (req, res) => {
+    // Fetch all camps from the database
+    const camps = await Camp.find().populate('campOrganizer', 'name');
+
+    if (!camps.length) {
+        return res.status(404).json(new apiError(404, {}, "No camps found"));
+    }
+
+    return res.status(200).json(new apiResponse(200, camps, "Camps retrieved successfully"));
+});
+
 export {
     registerPatient,
     updateVerifyStatus,
@@ -394,5 +406,6 @@ export {
     getAllReports,
     bookAppiontment,
     getAllPrescriptions,
-    getBookedAppointment
+    getBookedAppointment,
+    getCamp
 };

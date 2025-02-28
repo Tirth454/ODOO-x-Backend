@@ -9,7 +9,8 @@ import {
     bookAppiontment,
     getAllPrescriptions,
     getAllDoctor,
-    getBookedAppointment
+    getBookedAppointment,
+    getCamp
 } from "../controllers/patient.controller.js";
 import checkAuth from "../middlewares/auth.middleware.js";
 
@@ -24,7 +25,8 @@ router.route("/getAllDoctor").get(checkAuth, getAllDoctor)
 router.route("/getAllReports").get(checkAuth, getAllReports)
 router.route("/getAllPrescriptions").get(checkAuth, getAllPrescriptions)
 router.route("/bookAppiontment").post(checkAuth, bookAppiontment)
-router.route("/getBookedAppointment").get(checkAuth,getBookedAppointment)
+router.route("/getBookedAppointment").get(checkAuth, getBookedAppointment)
+router.route("/getCamp").post(checkAuth, getCamp)
 
 
 export default router;

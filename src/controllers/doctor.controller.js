@@ -5,6 +5,7 @@ import Doctor from "../models/doctor.model.js";
 import Appointment from "../models/appointment.model.js";
 import Prescription from "../models/presciption.model.js";
 import Patient from "../models/patient.model.js";
+import Camp from "../models/camp.model.js";
 import imagekit from "../utils/ImageKit.js"
 import fs from 'fs'
 import nodeMailer from "nodemailer";
@@ -510,8 +511,24 @@ const updateAttendedStatus = asyncHandler(async (req, res) => {
 });
 
 const addCamp = asyncHandler(async (req, res) => {
+    const { campName, campDate, campLocation, campDescription } = req.body;
 
-})
+    // Validate required fields
+    if (!campName || !campDate || !campLocation || !campDescription) {
+        return res.status(400).json(new apiError(400, {}, "All fields are required"));
+    }
+
+    // Create new camp
+    const camp = await Camp.create({
+        campName,
+        campDate,
+        campLocation,
+        campDescription,
+        campOrganizer: req.doctor._id, // Associate the camp with the logged-in doctor
+    });
+
+    return res.status(201).json(new apiResponse(201, camp, "Camp added successfully"));
+});
 
 export {
     registerDoctor,
@@ -524,5 +541,6 @@ export {
     getUpdatedAppointment,
     getPatientByUniqueId,
     addPrescription,
-    updateAttendedStatus
+    updateAttendedStatus,
+    addCamp
 };

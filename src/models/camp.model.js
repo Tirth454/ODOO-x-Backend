@@ -24,12 +24,7 @@ const campSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Doctor",
         required: [true, "Doctor ID is required"]
-    },
-    campParticipants: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Patient",
-        required: true
-    }]
+    }
 }, {
     timestamps: true
 });
