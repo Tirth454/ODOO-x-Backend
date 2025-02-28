@@ -4,6 +4,7 @@ import apiResponse from "../utils/apiResponse.js";
 import Laboratory from "../models/laboratory.model.js";
 import Patient from "../models/patient.model.js";
 import Prescription from "../models/presciption.model.js";
+import fs from 'fs'
 import nodeMailer from "nodemailer";
 
 const generateAccessAndRefreshToken = async (laboratoryId) => {
