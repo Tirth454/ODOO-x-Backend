@@ -293,7 +293,7 @@ const addReport = asyncHandler(async (req, res) => {
         throw new apiError(400, "Patient unique ID is required");
     }
 
-    if (!req.files || !req.files.reportImages || !req.files.reportImages.length) {
+    if (!req.files || !req.files.reportImage || !req.files.reportImage.length) {
         throw new apiError(400, "Report images are required");
     }
 
