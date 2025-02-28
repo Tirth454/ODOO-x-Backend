@@ -25,8 +25,12 @@ const appointmentSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    attended: {
+        type: Boolean,
+        default: false
     }
-});
+});   
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 

@@ -401,7 +401,8 @@ const getPatientByUniqueId = asyncHandler(async (req, res) => {
     const existingAppointment = await Appointment.findOne({
         doctorId: req.doctor._id,
         patientId: patient._id,
-        isaccepted: true
+        isaccepted: true,
+        attended: false
     });
 
     if (!existingAppointment) {
@@ -560,6 +561,30 @@ const addPrescription = asyncHandler(async (req, res) => {
     );
 });
 
+const updateAttendedStatus = asyncHandler(async (req, res) => {
+    const { patientId, appointmentId } = req.body;
+
+    // Validate required fields
+    if (!patientId || !appointmentId) {
+        return res.status(400).json(new apiError(400, {}, "Patient ID and Appointment ID are required"));
+    }
+
+    // Find the appointment
+    const appointment = await Appointment.findOne({ _id: appointmentId, patientId });
+
+    if (!appointment) {
+        return res.status(404).json(new apiError(404, {}, "Appointment not found for this patient"));
+    }
+
+    // Update the appointment status to attended
+    appointment.attended = true;
+    await appointment.save();
+
+    return res.status(200).json(
+        new apiResponse(200, appointment, "Appointment status updated to attended successfully")
+    );
+});
+
 export {
     registerDoctor,
     updateVerifyStatus,
@@ -572,5 +597,6 @@ export {
     getPatientByUniqueId,
     // getPrescriptionsByUniqueId,
     // getReportsByUniqueId,
-    addPrescription
+    addPrescription,
+    updateAttendedStatus
 };

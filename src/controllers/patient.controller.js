@@ -369,6 +369,21 @@ const getAllReports = asyncHandler(async (req, res) => {
     return res.status(200).json(new apiResponse(200, reports, "Reports retrieved successfully"))
 })
 
+const getBookedAppointment = asyncHandler(async (req, res) => {
+    const patientId = req.patient._id;
+
+    // Find all appointments for the patient with attended status false
+    const appointments = await Appointment.find({ patientId, attended: false });
+
+    if (!appointments || appointments.length === 0) {
+        return res.status(404).json(new apiError(404, {}, "No booked appointments found for this patient"));
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, appointments, "Booked appointments retrieved successfully")
+    );
+});
+
 export {
     registerPatient,
     updateVerifyStatus,
@@ -378,5 +393,6 @@ export {
     getAllDoctor,
     getAllReports,
     bookAppiontment,
-    getAllPrescriptions
+    getAllPrescriptions,
+    getBookedAppointment
 };
