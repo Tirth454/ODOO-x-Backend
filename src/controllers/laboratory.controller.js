@@ -303,14 +303,14 @@ const addReport = asyncHandler(async (req, res) => {
         throw new apiError(404, "Patient not found");
     }
 
-    const reportImages = [];
+    const reportImage = [];
     const getFormattedDate = () => {
         const date = new Date();
         return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
     };
 
     // Upload report images
-    for (const file of req.files.reportImages) {
+    for (const file of req.files.reportImage) {
         const fileContent = fs.readFileSync(file.path);
         const response = await imagekit.upload({
             file: fileContent,
@@ -319,7 +319,7 @@ const addReport = asyncHandler(async (req, res) => {
         });
         fs.unlinkSync(file.path); // Remove the file after uploading
 
-        reportImages.push({
+        reportImage.push({
             url: response.url,
             fileId: response.fileId,
         });
@@ -329,7 +329,7 @@ const addReport = asyncHandler(async (req, res) => {
     const report = await Report.create({
         laboratoryId,
         patientId: patient._id,
-        reportImages,
+        reportImage,
         createdAt: new Date()
     });
 
