@@ -82,13 +82,13 @@ const getAddressCoordinates = async (address) => {
             lng: location.lng
         };
     } catch (error) {
-        console.log(error); 
+        console.log(error);
         throw error instanceof apiError
             ? error
             : new apiError(
-                  500,
-                  "Error getting coordinates from Google Maps API"
-              );
+                500,
+                "Error getting coordinates from Google Maps API"
+            );
     }
 };
 
@@ -150,9 +150,9 @@ const calculateDistanceWithGoogle = async (point1, point2) => {
         throw error instanceof apiError
             ? error
             : new apiError(
-                  500,
-                  "Error calculating distance using Google Distance Matrix API"
-              );
+                500,
+                "Error calculating distance using Google Distance Matrix API"
+            );
     }
 };
 
@@ -667,6 +667,8 @@ const getBookedAppointment = asyncHandler(async (req, res) => {
 });
 
 const getCamp = asyncHandler(async (req, res) => {
+    const { patientLng, patientLtd } = req.query;
+
     // Fetch all camps from the database
     const camps = await Camp.find().populate("campOrganizer", "name");
 
@@ -674,9 +676,25 @@ const getCamp = asyncHandler(async (req, res) => {
         return res.status(404).json(new apiError(404, {}, "No camps found"));
     }
 
+    // Calculate distances for each camp using the camp address
+    const campsWithDistance = await Promise.all(camps.map(async (camp) => {
+        const campAddress = camp.campLocation; // Assuming campLocation is the address string
+        const campCoords = await getAddressCoordinates(campAddress); // Get coordinates from address
+
+        const distance = await calculateDistanceWithGoogle(
+            { ltd: patientLtd, lng: patientLng },
+            { ltd: campCoords.ltd, lng: campCoords.lng }
+        );
+
+        return {
+            ...camp.toObject(),
+            distance: distance.distance.text // Add distance to the camp object
+        };
+    }));
+
     return res
         .status(200)
-        .json(new apiResponse(200, camps, "Camps retrieved successfully"));
+        .json(new apiResponse(200, campsWithDistance, "Camps with distances retrieved successfully"));
 });
 
 export {
