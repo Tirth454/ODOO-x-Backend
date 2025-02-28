@@ -373,7 +373,7 @@ const getBookedAppointment = asyncHandler(async (req, res) => {
     const patientId = req.patient._id;
 
     // Find all appointments for the patient with attended status false
-    const appointments = await Appointment.find({ patientId, attended: false });
+    const appointments = await Appointment.find({ patientId, attended: false }).populate("doctorId", "name");
 
     if (!appointments || appointments.length === 0) {
         return res.status(404).json(new apiError(404, {}, "No booked appointments found for this patient"));

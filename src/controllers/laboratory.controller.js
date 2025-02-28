@@ -4,9 +4,10 @@ import apiResponse from "../utils/apiResponse.js";
 import Laboratory from "../models/laboratory.model.js";
 import Patient from "../models/patient.model.js";
 import Prescription from "../models/presciption.model.js";
-import fs from 'fs'
+import fs from "fs"
 import imagekit from "../utils/ImageKit.js"
 import nodeMailer from "nodemailer";
+import Report from '../models/reports.model.js'
 
 const generateAccessAndRefreshToken = async (laboratoryId) => {
     try {

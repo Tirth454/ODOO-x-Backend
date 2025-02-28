@@ -414,82 +414,6 @@ const getPatientByUniqueId = asyncHandler(async (req, res) => {
     );
 });
 
-// const getPrescriptionsByUniqueId = asyncHandler(async (req, res) => {
-//     const { uniqueId } = req.params;
-//     const doctorId = req.doctor._id;
-
-//     if (!uniqueId) {
-//         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
-//     }
-
-//     const patient = await Patient.findOne({ uniqueId });
-//     if (!patient) {
-//         return res.status(404).json(new apiError(404, {}, "Patient not found"));
-//     }
-
-//     // Check if doctor has an accepted appointment with this patient
-//     const existingAppointment = await Appointment.findOne({
-//         doctorId: doctorId,
-//         patientId: patient._id,
-//         isaccepted: true
-//     });
-
-//     if (!existingAppointment) {
-//         return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
-//     }
-
-//     // Get all prescriptions for the patient
-//     const prescriptions = await Prescription.find({ patientId: patient._id })
-//         .populate('doctorId', 'name specialization')
-//         .populate('patientId', 'name uniqueId');
-
-//     if (!prescriptions.length) {
-//         return res.status(404).json(new apiError(404, {}, "No prescriptions found for this patient"));
-//     }
-
-//     return res.status(200).json(
-//         new apiResponse(200, prescriptions, "Prescriptions retrieved successfully")
-//     );
-// });
-
-// const getReportsByUniqueId = asyncHandler(async (req, res) => {
-//     const { uniqueId } = req.params;
-//     const doctorId = req.doctor._id;
-
-//     if (!uniqueId) {
-//         return res.status(400).json(new apiError(400, {}, "Patient unique ID is required"));
-//     }
-
-//     const patient = await Patient.findOne({ uniqueId });
-//     if (!patient) {
-//         return res.status(404).json(new apiError(404, {}, "Patient not found"));
-//     }
-
-//     // Check if doctor has an accepted appointment with this patient
-//     const existingAppointment = await Appointment.findOne({
-//         doctorId: doctorId,
-//         patientId: patient._id,
-//         isaccepted: true
-//     });
-
-//     if (!existingAppointment) {
-//         return res.status(403).json(new apiError(403, {}, "No accepted appointment exists with this patient"));
-//     }
-
-//     // Get all reports for the patient
-//     const reports = await Report.find({ patientId: patient._id })
-//         .populate('doctorId', 'name specialization')
-//         .populate('patientId', 'name uniqueId');
-
-//     if (!reports.length) {
-//         return res.status(404).json(new apiError(404, {}, "No reports found for this patient"));
-//     }
-
-//     return res.status(200).json(
-//         new apiResponse(200, reports, "Reports retrieved successfully")
-//     );
-// });
-
 const addPrescription = asyncHandler(async (req, res) => {
     const doctorId = req.doctor._id;
     const { patientId } = req.body;
@@ -585,6 +509,10 @@ const updateAttendedStatus = asyncHandler(async (req, res) => {
     );
 });
 
+const addCamp = asyncHandler(async (req, res) => {
+
+})
+
 export {
     registerDoctor,
     updateVerifyStatus,
@@ -595,8 +523,6 @@ export {
     updateAppointmentStatus,
     getUpdatedAppointment,
     getPatientByUniqueId,
-    // getPrescriptionsByUniqueId,
-    // getReportsByUniqueId,
     addPrescription,
     updateAttendedStatus
 };
