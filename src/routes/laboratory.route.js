@@ -22,7 +22,7 @@ router.route("/logout").post(checkAuth, logoutLaboratory)
 router.route("/getReportsByUniqueId").post(checkAuth, getReportsByUniqueId);
 router.route("/addReport").post(checkAuth, upload.fields([
     {
-        name: "PricptionImage",
+        name: "reportImage",
         maxCount: 2
     }
 ]), addReport);
